@@ -42,7 +42,7 @@ fn main() {
     let start_request = api_client.get_program("start_request.aleo").unwrap();
     let hit_request = api_client.get_program("hit_request.aleo").unwrap();
     let stand_request = api_client.get_program("stand_request.aleo").unwrap();
-    let casino = api_client.get_program("zkgaming_blackjack1.aleo").unwrap();
+    let casino = api_client.get_program("zkgaming_blackjack.aleo").unwrap();
     let all_program = [
         random_aleo,
         start_request,
@@ -154,7 +154,7 @@ impl RecordMap {
     ) -> anyhow::Result<()> {
         for (_, r) in self.start_request.values() {
             let game_id = game_id();
-            let game_nonce = game_nonce();
+            let game_nonce = game_nonce() / 4;
             let inputs = [
                 r.clone().to_string(),
                 format!("{}u64", game_id),
@@ -164,7 +164,7 @@ impl RecordMap {
             let tx = Transaction::execute(
                 &vm,
                 &self.private_key,
-                "zkgaming_blackjack1.aleo",
+                "zkgaming_blackjack.aleo",
                 "process_start_request",
                 inputs.iter(),
                 None,
@@ -212,7 +212,7 @@ impl RecordMap {
                     let tx = Transaction::execute(
                         &vm,
                         &self.private_key,
-                        "zkgaming_blackjack1.aleo",
+                        "zkgaming_blackjack.aleo",
                         "start_game",
                         inputs.iter(),
                         None,
@@ -246,7 +246,7 @@ impl RecordMap {
             let tx = Transaction::execute(
                 &vm,
                 &self.private_key,
-                "zkgaming_blackjack1.aleo",
+                "zkgaming_blackjack.aleo",
                 "process_hit_request",
                 inputs.iter(),
                 None,
@@ -277,7 +277,7 @@ impl RecordMap {
             let tx = Transaction::execute(
                 &vm,
                 &self.private_key,
-                "zkgaming_blackjack1.aleo",
+                "zkgaming_blackjack.aleo",
                 "process_stand_request",
                 inputs.iter(),
                 None,
