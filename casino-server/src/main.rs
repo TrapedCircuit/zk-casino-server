@@ -20,13 +20,17 @@ pub struct Cli {
     pub pk: String,
     #[clap(long, default_value = "0")]
     pub start_at: u32,
+    #[clap(long)]
+    pub dest: Option<String>
 }
 
 fn main() {
     let cli = Cli::parse();
     tracing_subscriber::fmt::init();
-
-    let api_client = AleoAPIClient::<Testnet3>::local_testnet3("3030");
+    let api_client = match cli.dest {
+        Some(base_url) => AleoAPIClient::new(&base_url, "testnet3").expect("invalid base url"),
+        None => AleoAPIClient::local_testnet3("3030"),
+    };
     let pk = PrivateKey::<Testnet3>::from_str(&cli.pk).expect("invalid pk");
     let vk = ViewKey::try_from(pk).unwrap();
 
@@ -61,7 +65,7 @@ fn main() {
         println!("Added dependency: {}", p.id());
     }
 
-    let query = Query::from("http://127.0.0.1:3030");
+    let query = Query::from(api_client.base_url());
     let mut start_height = cli.start_at;
     loop {
         let query = query.clone();
@@ -137,7 +141,7 @@ pub fn sync(
             break;
         }
     }
-    tracing::info!("{:?}", record_map);
+    tracing::info!("{:#?}", record_map);
     Ok(end_height)
 }
 
@@ -182,7 +186,6 @@ impl RecordMap {
         // get random_part1 and random_part2 from same caller
         for (c1, r1) in self.random_part1.values() {
             for (c2, r2) in self.random_part2.values() {
-                println!("{}, {}", c1, c2);
                 if c1 == c2 {
                     let nonce1 = r1
                         .data()
@@ -194,16 +197,18 @@ impl RecordMap {
                         .get(&Identifier::from_str("nonce").unwrap())
                         .unwrap()
                         .to_string();
-
-                    let mock_nonce = 100u64;
-                    let cards = shuffle(mock_nonce);
+                    tracing::info!("accept nonce1: {} and nonce2: {}", nonce1, nonce2);
+                    let rng = &mut rand::thread_rng();
+                    let nonce1 = u64::from_str(nonce1.trim_end_matches("u64.private")).unwrap_or(game_nonce());
+                    let nonce2 = u64::from_str(nonce2.trim_end_matches("u64.private")).unwrap_or(game_nonce());
+                    let nonce = nonce1.wrapping_add(nonce2);
+                    let cards = shuffle(nonce);
                     let inputs = [
                         r1.clone().to_string(),
                         r2.clone().to_string(),
                         format!("{}u128", cards),
                     ];
 
-                    let rng = &mut rand::thread_rng();
                     let tx = Transaction::execute(
                         &vm,
                         &self.private_key,

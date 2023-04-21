@@ -7,7 +7,7 @@ pub fn shuffle(nonce: u64) -> u128 {
     }
 
     let mut state = nonce;
-    for i in (1..52).rev() {
+    for i in (0..51).rev() {
         let j = state % (i + 1) as u64;
         state = (state * 1103515245 + 12345) % 2u64.pow(31);
         cards.swap(i, j as usize);
